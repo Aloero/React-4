@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import type { User } from "../types";
+import { getProfile, updateProfile } from "../api/userApi";
+import { handleError } from "../helpers/handleError";
+import { ProfileCard } from "../components/ProfileCard";
 
 type Props = {
   token: string;
@@ -14,12 +17,44 @@ export function ProfilePage({ token }: Props) {
   const [bio, setBio] = useState<string>("");
 
   useEffect(() => {
-    // TODO: при монтировании получить профиль через userApi.getProfile(token)
-    // TODO: заполнить профиль и стейты nickname/bio, обрабатывать ошибки через handleError, выставлять loading
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getProfile(token);
+        if (!active) {
+          return;
+        };
+        setProfile(data);
+        setNickname(data.nickname);
+        setBio(data.bio);
+      } catch (e) {
+        if (active) setError(handleError(e));
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
   }, [token]);
 
   const handleSave = async () => {
-    // TODO (опционально): вызвать userApi.updateProfile(token, { nickname, bio }), обновить профиль, обработать ошибки
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await updateProfile(token, { nickname, bio });
+      setProfile(data);
+      setNickname(data.nickname);
+      setBio(data.bio);
+    } catch (e) {
+      setError(handleError(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,7 +62,7 @@ export function ProfilePage({ token }: Props) {
       <h2>Профиль</h2>
       {loading && <p>Загрузка...</p>}
       {error ? <p style={{ color: "red" }}>{error}</p> : null}
-      {/* TODO: отрисовать карточку профиля */}
+      <ProfileCard profile={profile} />
       <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
         <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Ник" />
         <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Описание" />

@@ -8,8 +8,13 @@ type Props = {
 export function ProfileCard({ profile }: Props) {
   if (!profile) return null;
 
-  // TODO: отобразить nickname, phone и bio из профиля (можно в простом div/карточке)
-  return <div>{/* TODO: профиль */}</div>;
+  return (
+    <div>
+      <span>{profile.nickname}</span>
+      <span>{profile.phone}</span>
+      <span>{profile.bio}</span>
+    </div>
+  );
 }
 
 export default ProfileCard;

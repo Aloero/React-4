@@ -8,18 +8,40 @@ type SocketCallbacks = {
 };
 
 export function connectSocket(token: string, { onMessage, onStatus }: SocketCallbacks) {
-  // TODO:
-  // 1) подключиться к WebSocket по WS_URL
-  // 2) при открытии сообщать статус "connected", при закрытии — "disconnected"
-  // 3) слушать сообщения; при type === "message:new" вызывать onMessage(payload)
-  // 4) вернуть методы sendMessage(text) -> отправка { type: "message:send", payload: { text, token } }
-  // 5) вернуть disconnect() для закрытия сокета
+  const socket = new WebSocket(WS_URL);
+
+  socket.onopen = () => {
+    onStatus?.("connected");
+  };
+
+  socket.onerror = () => {
+    onStatus?.("disconnected");
+  };
+
+  socket.onclose = () => {
+    onStatus?.("disconnected");
+  };
+
+  socket.onmessage = (event) => {
+    let data: { type?: string; payload?: Message };
+
+    try {
+      data = JSON.parse(event.data as string);
+    } catch {
+      return;
+    }
+
+    if (data.type === "message:new") {
+      onMessage?.(data.payload);
+    }
+  };
+
   return {
-    sendMessage: (_text: string) => {
-      throw new Error("Not implemented");
+    sendMessage: (text: string) => {
+      socket.send(JSON.stringify({ type: "message:send", payload: { text, token } }));
     },
     disconnect: () => {
-      throw new Error("Not implemented");
+      socket.close();
     }
   };
 }
